@@ -55,6 +55,7 @@ rootRouter.post("/chat", async (req, res, next) => {
       // instructions:
       //   "Please address the user as Jane Doe. The user has a premium account.",
     });
+    console.log(run);
     if (run.status === "completed") {
       const messages = await openAIClient.beta.threads.messages.list(
         run.thread_id
@@ -64,6 +65,53 @@ rootRouter.post("/chat", async (req, res, next) => {
     } else {
       throw new Error("Run status is not completed");
     }
+  } catch (err) {
+    return next(err);
+  }
+});
+
+rootRouter.post("/chat-stream", async (req, res, next) => {
+  try {
+    const { threadId, assistantId, userMessage } = req.body;
+    const message = await openAIClient.beta.threads.messages.create(threadId, {
+      role: "user",
+      content: userMessage,
+    });
+    // We use the stream SDK helper to create a run with
+    // streaming. The SDK provides helpful event listeners to handle
+    // the streamed response.
+
+    const run = openAIClient.beta.threads.runs
+      .stream(threadId, {
+        assistant_id: assistantId,
+      })
+      .on("textCreated", (text) => {
+        // process.stdout.write("\nassistant > ")
+      })
+      .on("textDelta", (textDelta, snapshot) => {
+        if (textDelta.value) {
+          // process.stdout.write(textDelta.value);
+          res.write(textDelta.value);
+        }
+      })
+      .on("toolCallCreated", (toolCall) =>
+        process.stdout.write(`\nassistant > ${toolCall.type}\n\n`)
+      )
+      .on("toolCallDelta", (toolCallDelta, snapshot) => {
+        if (toolCallDelta.type === "code_interpreter") {
+          if (toolCallDelta.code_interpreter?.input) {
+            process.stdout.write(toolCallDelta.code_interpreter.input);
+          }
+          if (toolCallDelta.code_interpreter?.outputs) {
+            process.stdout.write("\noutput >\n");
+            toolCallDelta.code_interpreter.outputs.forEach((output) => {
+              if (output.type === "logs") {
+                process.stdout.write(`\n${output.logs}\n`);
+              }
+            });
+          }
+        }
+      });
   } catch (err) {
     return next(err);
   }
