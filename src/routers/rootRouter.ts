@@ -2,7 +2,7 @@ import { Router } from "express";
 import environmentVars from "lib/environmentVars";
 import openAIClient from "lib/openAIClient";
 import friendsRouter from "./children/friendsRouter";
-
+import { eventHandler } from "./eventHandler";
 const rootRouter = Router();
 rootRouter.use("/friends", friendsRouter);
 rootRouter.get("/", async (req, res, next) => {
@@ -112,6 +112,27 @@ rootRouter.post("/chat-stream", async (req, res, next) => {
           }
         }
       });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+rootRouter.post("/chat-stream-fn-calling", async (req, res, next) => {
+  try {
+    const { threadId, assistantId, userMessage } = req.body;
+    const message = await openAIClient.beta.threads.messages.create(threadId, {
+      role: "user",
+      content: userMessage,
+    });
+    const stream = openAIClient.beta.threads.runs.stream(
+      threadId,
+      { assistant_id: assistantId },
+      eventHandler as any
+    );
+
+    for await (const event of stream) {
+      eventHandler.emit("event", event, res);
+    }
   } catch (err) {
     return next(err);
   }
