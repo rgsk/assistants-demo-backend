@@ -1,6 +1,8 @@
 import { Router } from "express";
+import { db } from "lib/db";
 import environmentVars from "lib/environmentVars";
 import openAIClient from "lib/openAIClient";
+import { z } from "zod";
 import friendsRouter from "./children/friendsRouter";
 import { eventHandler } from "./eventHandler";
 const rootRouter = Router();
@@ -38,6 +40,57 @@ rootRouter.post("/threads", async (req, res, next) => {
   try {
     const thread = await openAIClient.beta.threads.create();
     return res.json({ threadId: thread.id });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+const querySchema = z.object({
+  userId: z.string(),
+  assistantId: z.string(),
+});
+
+rootRouter.get("/conversations", async (req, res, next) => {
+  try {
+    const { userId, assistantId } = querySchema.parse(req.query);
+    const conversations = await db.conversation.findMany({
+      where: {
+        userId: userId,
+        assistantId: assistantId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    // writeFile("src/conversations.json", JSON.stringify(conversations));
+    return res.json(conversations);
+    // return res.json(sampleConversations);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// schema for request body
+const createConversationSchema = z.object({
+  threadId: z.string(),
+  firstUserMessage: z.string(),
+  assistantId: z.string(),
+  userId: z.string(),
+});
+
+rootRouter.post("/conversations", async (req, res, next) => {
+  try {
+    const { threadId, firstUserMessage, assistantId, userId } =
+      createConversationSchema.parse(req.body);
+    const conversation = await db.conversation.create({
+      data: {
+        threadId,
+        title: firstUserMessage,
+        userId,
+        assistantId,
+      },
+    });
+    return res.json(conversation);
   } catch (err) {
     return next(err);
   }
