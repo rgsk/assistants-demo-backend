@@ -76,11 +76,12 @@ const createConversationSchema = z.object({
   firstUserMessage: z.string(),
   assistantId: z.string(),
   userId: z.string(),
+  superPowerId: z.string().optional(),
 });
 
 rootRouter.post("/conversations", async (req, res, next) => {
   try {
-    const { threadId, firstUserMessage, assistantId, userId } =
+    const { threadId, firstUserMessage, assistantId, userId, superPowerId } =
       createConversationSchema.parse(req.body);
     const conversation = await db.conversation.create({
       data: {
@@ -88,6 +89,7 @@ rootRouter.post("/conversations", async (req, res, next) => {
         title: firstUserMessage,
         userId,
         assistantId,
+        superPowerId,
       },
     });
     return res.json(conversation);
