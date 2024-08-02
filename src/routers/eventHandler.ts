@@ -28,6 +28,8 @@ class EventHandler extends EventEmitter {
           }
         }
       }
+    } else if (event.event === "thread.message.created") {
+      res.write(`thread.message.created: ${event.data.id}`);
     } else if (event.event === "thread.run.completed") {
       res.end();
     }

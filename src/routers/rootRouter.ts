@@ -23,14 +23,31 @@ rootRouter.get("/threads/:threadId/messages", async (req, res, next) => {
     const threadMessages = await openAIClient.beta.threads.messages.list(
       threadId
     );
-    // console.log(threadMessages.data);
     const modifiedMessages = threadMessages.data.reverse().map((message) => {
       return {
+        id: message.id,
         role: message.role,
         content: (message.content[0] as any).text.value,
       };
     });
     return res.json(modifiedMessages);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+rootRouter.post("/messageFeedback", async (req, res, next) => {
+  try {
+    const { reaction, messageId, superPowerId, feedbackText } = req.body;
+    const messageFeedback = await db.messageFeedback.create({
+      data: {
+        messageId,
+        reaction,
+        feedbackText,
+        superPowerId,
+      },
+    });
+    return res.json(messageFeedback);
   } catch (err) {
     return next(err);
   }

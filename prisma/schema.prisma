@@ -33,3 +33,18 @@ model Conversation {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+enum Reaction {
+  LIKE
+  DISLIKE
+}
+
+model MessageFeedback {
+  id           String   @id @default(cuid())
+  messageId    String
+  superPowerId String?
+  reaction     Reaction
+  feedbackText String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
