@@ -38,13 +38,15 @@ rootRouter.get("/threads/:threadId/messages", async (req, res, next) => {
 
 rootRouter.post("/messageFeedback", async (req, res, next) => {
   try {
-    const { reaction, messageId, superPowerId, feedbackText } = req.body;
+    const { reaction, messageId, superPowerId, feedbackText, userId } =
+      req.body;
     const messageFeedback = await db.messageFeedback.create({
       data: {
         messageId,
         reaction,
         feedbackText,
         superPowerId,
+        userId,
       },
     });
     return res.json(messageFeedback);

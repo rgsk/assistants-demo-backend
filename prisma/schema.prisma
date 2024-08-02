@@ -41,6 +41,7 @@ enum Reaction {
 
 model MessageFeedback {
   id           String   @id @default(cuid())
+  userId       String
   messageId    String
   superPowerId String?
   reaction     Reaction
