@@ -8,6 +8,11 @@ export const db = new PrismaClient({
   ],
 });
 
+const LOG_QUERY = false;
 db.$on("query", async (e: any) => {
-  console.log(`${e.query} ${e.params}`);
+  if (LOG_QUERY) {
+    console.log("\n----- Query Start -----\n");
+    console.log(`${e.query} ${e.params}`);
+    console.log("\n----- Query End -----\n");
+  }
 });
